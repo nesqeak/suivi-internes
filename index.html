@@ -1,8 +1,14 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Suivi des acquisitions RT</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" type="image/png" href="logo%20HCL.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&display=swap">
 <style>
+html, body { margin: 0; } img { max-width: 100%; } [hidden] { display: none !important; }
 /* Layout : bandeau blanc à motif de grille HCL, puis une colonne de contenu ; angles droits partout. */
 :root {
   --hcl-cyan: #00b5ef;
@@ -211,12 +217,13 @@ td.pending { color: var(--ink-soft); font-style: italic; }
   @keyframes pop { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 }
 </style>
-
+</head>
+<body>
 <div class="app">
   <header class="top">
     <div class="top-inner">
       <div class="motif" aria-hidden="true"><i class="y"></i><i class="c"></i><i class="p"></i></div>
-      <img alt="Logo des Hospices Civils de Lyon" src="data:image/png;base64,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">
+      <img alt="Logo des Hospices Civils de Lyon" src="logo%20HCL.png">
       <div class="brand">
         <div class="brand-title">Service de Radiothérapie</div>
         <div class="brand-sub">Suivi des acquisitions du semestre</div>
@@ -228,13 +235,29 @@ td.pending { color: var(--ink-soft); font-style: italic; }
 </div>
 <div id="modalRoot"></div>
 
-<script>
+<script type="module">
+// SDK Firebase chargé dynamiquement : si le réseau le bloque, la page s'affiche quand même avec un message.
+const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+let initializeApp, getFirestore, doc, collection, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, FieldPath,
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, reauthenticateWithCredential, EmailAuthProvider;
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAcTp5WLtuRE8wchlUmxuUUk4dJgjjQ2WA",
+  authDomain: "suivi-internes.firebaseapp.com",
+  projectId: "suivi-internes",
+  storageBucket: "suivi-internes.firebasestorage.app",
+  messagingSenderId: "933102966532",
+  appId: "1:933102966532:web:c9d57e094e4bc410272251"
+};
+
 (function () {
   "use strict";
 
   /* ---------- Référentiel des acquisitions ---------- */
 
-  const ADMIN_PASSWORD = "sfro";
+  // Compte administrateur Firebase (le mot de passe est vérifié par Firebase, pas par la page).
+  const ADMIN_EMAIL = "ariane.lapierre@chu-lyon.fr";
+  const FICHE_URL = "260923%20Fiche%20de%20poste%20internes.pdf";
 
   const PROFILE_TYPES = [
     { id: "socle", label: "Phase socle", fiche: true },
@@ -493,11 +516,23 @@ td.pending { color: var(--ink-soft); font-style: italic; }
 
   /* ---------- Stockage en ligne ---------- */
 
-  let db = null, assets = null, dbReady = false;
+  let db = null, auth = null, dbReady = false, adminUser = null;
   let unsubs = [];
   function clearSubs() { unsubs.forEach(u => { try { u(); } catch (e) {} }); unsubs = []; }
 
-  const profileRef = id => db.doc("profils/" + id);
+  const wrapDoc = s => ({ id: s.id, exists: s.exists(), data: () => s.data() });
+  // Les écritures ciblent un champ précis (FieldPath) pour ne jamais écraser le reste du profil.
+  function profileRef(id) {
+    const ref = doc(db, "profils", id);
+    return {
+      get: async () => wrapDoc(await getDoc(ref)),
+      set: data => setDoc(ref, data),
+      delete: () => deleteDoc(ref),
+      setFields: (...pairs) => updateDoc(ref, ...pairs.flatMap(([path, value]) => [new FieldPath(...path), value])),
+      onSnapshot: (next, err) => onSnapshot(ref, s => next(wrapDoc(s)), err)
+    };
+  }
+  const isAdmin = () => !!adminUser;
 
   /* ---------- Routage ---------- */
 
@@ -517,7 +552,7 @@ td.pending { color: var(--ink-soft); font-style: italic; }
     }
     if (!db) {
       $view.append(h("div", { class: "notice narrow" },
-        "Le stockage en ligne n’est pas disponible dans cette vue. Ouvrez la page depuis son lien claude.ai en étant connecté pour accéder aux profils."));
+        "Impossible de se connecter à la base de données en ligne. Vérifiez votre connexion internet puis rechargez la page."));
     }
     ({ home: viewHome, internLogin: viewInternLogin, adminLogin: viewAdminLogin, admin: viewAdmin, adminProfile: viewAdminProfile, intern: viewIntern }[route.name] || viewHome)();
   }
@@ -535,7 +570,7 @@ td.pending { color: var(--ink-soft); font-style: italic; }
           h("span", { class: "sq" }, svg("user")),
           h("strong", null, "Accès interne / assistant"),
           h("span", { class: "muted" }, "Saisir le nom de votre profil pour ouvrir votre suivi.")),
-        h("button", { class: "choice admin", type: "button", onclick: () => sstore("rt-admin") === "1" ? go("admin") : go("adminLogin") },
+        h("button", { class: "choice admin", type: "button", onclick: () => isAdmin() ? go("admin") : go("adminLogin") },
           h("span", { class: "sq" }, svg("lock")),
           h("strong", null, "Accès administrateur"),
           h("span", { class: "muted" }, "Gérer les profils, consulter les suivis et valider les compétences.")))
@@ -569,40 +604,48 @@ td.pending { color: var(--ink-soft); font-style: italic; }
   function viewAdminLogin() {
     const err = h("div", { class: "error", role: "alert" });
     const input = h("input", { type: "password", id: "adminPwd", autocomplete: "current-password" });
-    $view.append(h("form", { class: "panel narrow", onsubmit: e => {
-      e.preventDefault();
-      if (input.value === ADMIN_PASSWORD) { sstore("rt-admin", "1"); go("admin"); }
-      else { err.textContent = "Mot de passe incorrect."; input.select(); }
+    const btn = h("button", { class: "btn", type: "submit" }, "Se connecter");
+    $view.append(h("form", { class: "panel narrow", onsubmit: async e => {
+      e.preventDefault(); err.textContent = "";
+      if (!auth) { err.textContent = "La connexion en ligne est indisponible."; return; }
+      btn.disabled = true;
+      try {
+        const cred = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, input.value);
+        adminUser = cred.user; go("admin");
+      } catch (x) {
+        btn.disabled = false;
+        err.textContent = x && x.code === "auth/too-many-requests"
+          ? "Trop de tentatives. Patientez quelques minutes avant de réessayer."
+          : x && x.code === "auth/network-request-failed" ? "Connexion internet indisponible." : "Mot de passe incorrect.";
+        input.select();
+      }
     } },
       h("button", { type: "button", class: "link-back", onclick: () => go("home") }, "← Page de garde"),
       h("h2", null, "Accès administrateur"),
       h("label", { class: "field", for: "adminPwd" }, "Mot de passe", input),
       err,
-      h("div", { class: "row" }, h("button", { class: "btn", type: "submit" }, "Se connecter"))));
+      h("div", { class: "row" }, btn)));
   }
 
   /* ---------- Administration ---------- */
 
-  function requireAdmin() { if (sstore("rt-admin") !== "1") { go("adminLogin"); return false; } return true; }
+  function requireAdmin() { if (!isAdmin()) { go("adminLogin"); return false; } return true; }
 
   function viewAdmin() {
     if (!requireAdmin()) return;
     const list = h("div", { class: "profiles" }, h("div", { class: "empty" }, "Chargement des profils…"));
-    const ficheBox = h("div", { class: "panel" });
 
     $view.append(
       h("div", { class: "row spread" },
         h("div", { style: "display:grid;gap:4px" }, h("div", { class: "eyebrow" }, "Administration"), h("h1", null, "Profils")),
         h("div", { class: "row" },
           h("button", { class: "btn", type: "button", onclick: openCreateProfile }, "+ Créer un profil"),
-          h("button", { class: "btn ghost", type: "button", onclick: () => { sstore("rt-admin", null); go("home"); } }, "Se déconnecter"))),
-      list,
-      ficheBox);
+          h("button", { class: "btn ghost", type: "button", onclick: async () => { try { await signOut(auth); } catch (e) {} adminUser = null; go("home"); } }, "Se déconnecter"))),
+      list);
 
-    renderFicheAdmin(ficheBox);
     if (!db) { list.innerHTML = ""; list.append(h("div", { class: "empty" }, "Profils indisponibles hors ligne.")); return; }
 
-    unsubs.push(db.collection("profils").onSnapshot(snap => {
+    unsubs.push(onSnapshot(collection(db, "profils"), snap => {
       list.innerHTML = "";
       const docs = snap.docs.map(d => Object.assign({ id: d.id }, d.data()))
         .sort((a, b) => String(a.nom).localeCompare(String(b.nom), "fr"));
@@ -623,36 +666,6 @@ td.pending { color: var(--ink-soft); font-style: italic; }
             h("button", { class: "btn small danger", type: "button", onclick: () => confirmDelete(p) }, "Supprimer"))));
       }
     }, () => { list.innerHTML = ""; list.append(h("div", { class: "empty" }, "Impossible de charger les profils. Rechargez la page.")); }));
-  }
-
-  function renderFicheAdmin(box) {
-    box.innerHTML = "";
-    box.append(h("h2", null, "Fiche de poste des internes"),
-      h("p", { class: "muted" }, "Le lien « Fiche de poste » apparaît en haut de la page des profils Phase socle et FST (pas pour Docteur Junior ni Assistant / CCA)."));
-    const status = h("p", null, "Chargement…");
-    box.append(status);
-    if (!db) { status.textContent = "Indisponible hors ligne."; return; }
-    unsubs.push(db.doc("config/fiche").onSnapshot(s => {
-      status.innerHTML = "";
-      const d = s.exists ? s.data() : null;
-      if (d && d.url) status.append("Fichier en ligne : ", h("a", { href: d.url, target: "_blank", rel: "noopener", class: "fiche" }, svg("doc"), d.nom || "Fiche de poste"));
-      else status.append(h("span", { class: "muted" }, "Aucune fiche déposée pour l’instant."));
-    }));
-    if (assets) {
-      const file = h("input", { type: "file", id: "ficheFile", accept: "application/pdf" });
-      const err = h("div", { class: "error", role: "alert" });
-      box.append(h("div", { class: "row" }, file,
-        h("button", { class: "btn small", type: "button", onclick: async () => {
-          err.textContent = "";
-          const f = file.files && file.files[0];
-          if (!f) { err.textContent = "Choisissez d’abord le fichier PDF."; return; }
-          try {
-            const up = await assets.upload(f);
-            await db.doc("config/fiche").set({ url: up.url, id: up.id, nom: f.name, deposeLe: new Date().toISOString() });
-            toast("Fiche de poste déposée");
-          } catch (x) { err.textContent = "Le dépôt a échoué (" + ((x && x.code) || "erreur") + "). Vérifiez que le fichier est un PDF de moins de 20 Mo."; }
-        } }, "Déposer la fiche")), err);
-    }
   }
 
   function openCreateProfile() {
@@ -768,10 +781,12 @@ td.pending { color: var(--ink-soft); font-style: italic; }
       const btn = h("button", { class: "btn", type: "submit" }, "Valider");
       box.append(h("form", { style: "display:grid;gap:14px", onsubmit: async e => {
         e.preventDefault(); err.textContent = "";
-        if (pwd.value !== ADMIN_PASSWORD) { err.textContent = "Mot de passe incorrect."; pwd.select(); return; }
         btn.disabled = true;
         try {
-          await profileRef(p.id).update({ competences: { [c.id]: { valideLe: todayISO(), valideA: new Date().toISOString() } } });
+          await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(ADMIN_EMAIL, pwd.value));
+        } catch (x) { btn.disabled = false; err.textContent = "Mot de passe incorrect."; pwd.select(); return; }
+        try {
+          await profileRef(p.id).setFields([["competences", c.id], { valideLe: todayISO(), valideA: new Date().toISOString() }]);
           closeModal(); toast("Compétence « " + c.title + " » validée");
         } catch (x) { btn.disabled = false; err.textContent = "La validation a échoué. Réessayez."; }
       } },
@@ -789,7 +804,7 @@ td.pending { color: var(--ink-soft); font-style: italic; }
     const wrap = h("div", { style: "display:grid;gap:20px" }, h("p", { class: "muted" }, "Chargement de votre suivi…"));
     $view.append(h("button", { type: "button", class: "link-back", onclick: () => { sstore("rt-intern", null); go("home"); } }, "← Quitter mon suivi"), wrap);
     if (!db) return;
-    let fiche = null, profile = null;
+    let profile = null;
     const draw = () => {
       wrap.innerHTML = "";
       if (!profile) { wrap.append(h("div", { class: "panel" }, "Ce profil n’existe plus. Contactez l’administrateur.")); return; }
@@ -799,9 +814,7 @@ td.pending { color: var(--ink-soft); font-style: italic; }
         h("div", { style: "display:grid;gap:6px;min-width:0" },
           h("div", { class: "eyebrow" }, tp.label),
           h("h1", null, profile.nom),
-          tp.fiche ? (fiche && fiche.url
-            ? h("a", { class: "fiche", href: fiche.url, target: "_blank", rel: "noopener" }, svg("doc"), "Fiche de poste des internes (PDF)")
-            : h("span", { class: "fiche muted" }, svg("doc"), "Fiche de poste : pas encore déposée par l’administrateur")) : null),
+          tp.fiche ? h("a", { class: "fiche", href: FICHE_URL, target: "_blank", rel: "noopener" }, svg("doc"), "Fiche de poste des internes (PDF)") : null),
         statsRow(pr));
       wrap.append(head,
         h("div", { class: "legend" },
@@ -818,7 +831,6 @@ td.pending { color: var(--ink-soft); font-style: italic; }
       draw();
       if (profile) refreshOpenTaskModal(profile);
     }));
-    unsubs.push(db.doc("config/fiche").onSnapshot(s => { fiche = s.exists ? s.data() : null; if (profile) draw(); }));
   }
 
   function internComp(c, p) {
@@ -869,12 +881,12 @@ td.pending { color: var(--ink-soft); font-style: italic; }
         btn.disabled = true;
         try {
           if (entry) {
-            await profileRef(p.id).update({ taches: { [key]: { commentaire: comment.value.trim(), modifieLe: new Date().toISOString() } } });
+            await profileRef(p.id).setFields([["taches", key, "commentaire"], comment.value.trim()], [["taches", key, "modifieLe"], new Date().toISOString()]);
             closeModal(); toast("Commentaire enregistré");
           } else {
             if (!date.value) { err.textContent = "Indiquez la date de réalisation."; btn.disabled = false; return; }
             if (!senior.value.trim()) { err.textContent = "Indiquez le nom du sénior."; btn.disabled = false; return; }
-            await profileRef(p.id).update({ taches: { [key]: { date: date.value, senior: senior.value.trim(), commentaire: comment.value.trim(), saisiLe: new Date().toISOString() } } });
+            await profileRef(p.id).setFields([["taches", key], { date: date.value, senior: senior.value.trim(), commentaire: comment.value.trim(), saisiLe: new Date().toISOString() }]);
             closeModal(); toast("Tâche validée");
           }
         } catch (x) { btn.disabled = false; err.textContent = "L’enregistrement a échoué. Réessayez."; }
@@ -895,17 +907,34 @@ td.pending { color: var(--ink-soft); font-style: italic; }
 
   render();
   (async () => {
-    try {
-      for (let k = 0; k < 30 && !(window.claude && window.claude.use); k++) await new Promise(r => setTimeout(r, 100));
-      if (window.claude && window.claude.use) {
-        const [d, a] = await Promise.all([window.claude.use("db"), window.claude.use("assets").catch(() => null)]);
-        db = d; assets = a;
-      }
-    } catch (e) { db = null; }
-    dbReady = true;
+  try {
+    const [fa, ff, fu] = await Promise.all([
+      import(SDK + "firebase-app.js"), import(SDK + "firebase-firestore.js"), import(SDK + "firebase-auth.js")]);
+    ({ initializeApp } = fa);
+    ({ getFirestore, doc, collection, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, FieldPath } = ff);
+    ({ getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, reauthenticateWithCredential, EmailAuthProvider } = fu);
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+  } catch (e) { db = null; auth = null; }
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true; dbReady = true;
     const internId = sstore("rt-intern");
     if (db && internId) go("intern", { id: internId });
     else render();
+  };
+  if (auth) {
+    // La session administrateur est conservée par Firebase d'une visite à l'autre.
+    onAuthStateChanged(auth, u => {
+      adminUser = u && u.email === ADMIN_EMAIL ? u : null;
+      if (!started) start();
+      else if (!adminUser && (route.name === "admin" || route.name === "adminProfile")) go("adminLogin");
+    });
+  } else start();
   })();
 })();
 </script>
+</body>
+</html>
