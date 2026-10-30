@@ -197,6 +197,13 @@ table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
 th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
 th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); background: var(--bg); border-top: 0; }
 td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.task-row td { background: var(--bg); border-top: 2px solid var(--line); }
+.task-row-inner { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.task-row-inner strong { color: var(--title); }
+.task-status { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.task-valid { display: inline-flex; gap: 6px; align-items: center; color: var(--ok); font-weight: 700; font-size: 0.85rem; }
+.task-valid svg { width: 16px; height: 16px; }
+.task-label-row { display: flex; gap: 8px 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
 td.pending { color: var(--ink-soft); font-style: italic; }
 .comment { white-space: pre-wrap; }
 
@@ -315,13 +322,13 @@ const firebaseConfig = {
   const pathoComps = (map, n) => Object.entries(map).map(([title, tasks]) => ({ title, tasks: tasks.map(l => t(l, n)) }));
 
   function interneCurriculum(medecins, rcp, pathos, curie) {
-    const contourage = [t("Vérifier et valider une fusion", 12)];
+    const contourage = [t("Vérifier et valider une fusion", 2)];
     const comps2 = [
       { title: "Consultation", tasks: medecins.map(m => t("Préparer 3 dossiers avec " + m, 3)) },
       { title: "RCP du CHLS", tasks: rcp.map(r => t("Assister à la RCP " + r, 2)) },
       { title: "Contourage", tasks: contourage }
     ];
-    if (curie) comps2.push({ title: "Curiethérapie", tasks: [t("Assister à la pose d’une curiethérapie utéro-vaginale", 12)] });
+    if (curie) comps2.push({ title: "Curiethérapie", tasks: [t("Assister à la pose d’une curiethérapie utéro-vaginale", 2)] });
     return [
       { title: "Activités du service", comps: [
         { title: "Réunion du matin", tasks: [
@@ -329,8 +336,8 @@ const firebaseConfig = {
           t("Validation des visites « réunion du matin »", 5),
           t("Validation des images de la veille avec mise de l’alerte", 5)] },
         { title: "Plateau technique", tasks: [t("Assister à une séance d’IRM Linac", 5)] },
-        { title: "Scanner", tasks: [t("Vérification d’une séquence 4D", 5), t("Vérification d’une préparation rectale", 5)] },
-        { title: "Recherche", tasks: [t("Participer à une inclusion dans un essai (avec ARC)", 5), t("Présentation biblio", 5)] }
+        { title: "Scanner", tasks: [t("Vérification d’une préparation rectale", 4)] },
+        { title: "Recherche", tasks: [t("Participer à une inclusion dans un essai (avec ARC)", 1), t("Présentation biblio", 3)] }
       ] },
       { title: "Consultation, RCP et contourage", comps: comps2 },
       { title: "Pathologies", comps: pathoComps(pathos, 3) }
@@ -355,24 +362,22 @@ const firebaseConfig = {
           t("Validation des visites « réunion du matin »", 10),
           t("Validation des images de la veille avec mise de l’alerte", 10)] },
         { title: "Plateau technique", tasks: [
-          t("Validation d’une première séance en RC3D", 10),
-          t("Validation d’une première séance en électrons", 10),
+          t("Validation d’une première séance en RC3D", 3),
           t("Validation d’une première séance VMAT", 10),
           t("Validation d’une stéréotaxie pulmonaire", 10),
           t("Validation d’une stéréotaxie sous-diaphragmatique", 10),
           t("Suivre une séance sur l’IRM Linac", 10)] },
         { title: "Scanner", tasks: [
-          t("Vérification d’une séquence 4D", 10),
-          t("Vérification d’une préparation rectale", 10),
-          t("Simulation d’un champ direct en électrons", 10),
-          t("Programmer une replanification", 10)] },
-        { title: "Recherche", tasks: [t("Participer à une inclusion dans un essai (avec ARC)", 10)] }
+          t("Vérification d’une préparation rectale", 3),
+          t("Simulation d’un champ direct en électrons", 3),
+          t("Programmer une replanification", 3)] },
+        { title: "Recherche", tasks: [t("Participer à une inclusion dans un essai (avec ARC)", 3)] }
       ] },
       { title: "Contourage", comps: [
         { title: "Contourage", tasks: [
-          t("Vérifier et valider une fusion", 10),
-          t("Utilisation de templates de structures", 10),
-          t("Utiliser SmartAdapt", 10)] }
+          t("Vérifier et valider une fusion", 5),
+          t("Utilisation de templates de structures", 5),
+          t("Utiliser SmartAdapt", 5)] }
       ] },
       { title: "Pathologies", comps: pathoComps(PATHO_DJ, 3) }
     ],
@@ -417,6 +422,14 @@ const firebaseConfig = {
     }
   }
   const iterKey = (task, i) => task.id + "__" + i;
+
+  function taskProgress(tk, profile) {
+    const taches = (profile && profile.taches) || {};
+    let done = 0;
+    for (let i = 1; i <= tk.n; i++) if (taches[iterKey(tk, i)]) done++;
+    return { done, total: tk.n, complete: done === tk.n };
+  }
+  const taskValidation = (tk, p) => (p.tachesValidees || {})[tk.id];
 
   function compProgress(comp, profile) {
     let done = 0, total = 0;
@@ -753,28 +766,36 @@ const firebaseConfig = {
           : h("span", { class: "chip" + (prog.complete ? " ready" : "") }, prog.done + " / " + prog.total));
     const rows = [];
     const taches = p.taches || {};
-    for (const tk of c.tasks) for (let i = 1; i <= tk.n; i++) {
-      const e = taches[iterKey(tk, i)];
-      if (!e) continue;
-      rows.push(h("tr", null,
-        h("td", null, tk.label), h("td", { class: "num" }, i + " / " + tk.n),
-        h("td", { class: "num" }, frDate(e.date)), h("td", null, e.senior || ""),
-        h("td", { class: "comment" }, e.commentaire || "")));
+    for (const tk of c.tasks) {
+      const tp = taskProgress(tk, p), tv = taskValidation(tk, p);
+      rows.push(h("tr", { class: "task-row" }, h("td", { colspan: "4" }, h("div", { class: "task-row-inner" },
+        h("strong", null, tk.label),
+        h("span", { class: "task-status" },
+          tv ? h("span", { class: "task-valid" }, svg("check"), "Tâche validée le " + frDate(tv.valideLe))
+             : h("span", { class: "chip" + (tp.complete ? " ready" : "") }, tp.done + " / " + tp.total),
+          !tv && tp.complete ? h("button", { class: "btn small", type: "button", onclick: () => openValidate(p, { kind: "tache", id: tk.id, title: tk.label }) }, "Valider la tâche") : null)))));
+      for (let i = 1; i <= tk.n; i++) {
+        const e = taches[iterKey(tk, i)];
+        if (!e) continue;
+        rows.push(h("tr", null,
+          h("td", { class: "num" }, i + " / " + tk.n),
+          h("td", { class: "num" }, frDate(e.date)), h("td", null, e.senior || ""),
+          h("td", { class: "comment" }, e.commentaire || "")));
+      }
     }
-    const table = rows.length
-      ? h("div", { class: "table-wrap" }, h("table", null,
-          h("thead", null, h("tr", null, h("th", null, "Tâche"), h("th", null, "Itération"), h("th", null, "Date"), h("th", null, "Sénior"), h("th", null, "Commentaire"))),
-          h("tbody", null, rows)))
-      : h("p", { class: "muted", style: "padding:12px 14px" }, "Aucune tâche renseignée pour l’instant.");
+    const table = h("div", { class: "table-wrap" }, h("table", null,
+      h("thead", null, h("tr", null, h("th", null, "Itération"), h("th", null, "Date"), h("th", null, "Sénior"), h("th", null, "Commentaire"))),
+      h("tbody", null, rows)));
     let foot;
     if (val) foot = h("div", { class: "validated-band" }, svg("check"), "Compétence validée le " + frDate(val.valideLe));
-    else if (prog.complete) foot = h("div", { class: "comp-foot" }, h("span", null, "Toutes les itérations sont renseignées."),
-      h("button", { class: "btn small", type: "button", onclick: () => openValidate(c, p) }, "Valider la compétence"));
-    else foot = h("div", { class: "comp-foot" }, h("span", { class: "muted" }, "Validation possible lorsque les " + prog.total + " itérations seront renseignées (" + (prog.total - prog.done) + " restantes)."));
+    else if (prog.complete) foot = h("div", { class: "comp-foot" }, h("span", null, "Toutes les tâches sont terminées."),
+      h("button", { class: "btn small", type: "button", onclick: () => openValidate(p, { kind: "competence", id: c.id, title: c.title }) }, "Valider la compétence"));
+    else foot = h("div", { class: "comp-foot" }, h("span", { class: "muted" }, "Validation de la compétence possible lorsque toutes les tâches seront terminées (" + (prog.total - prog.done) + " itération" + (prog.total - prog.done > 1 ? "s" : "") + " restante" + (prog.total - prog.done > 1 ? "s" : "") + ")."));
     return h("div", { class: "recap-comp" }, head, table, foot);
   }
 
-  function openValidate(c, p) {
+  function openValidate(p, target) {
+    const isComp = target.kind === "competence";
     openModal(box => {
       const err = h("div", { class: "error", role: "alert" });
       const pwd = h("input", { type: "password", id: "validatePwd", autocomplete: "current-password" });
@@ -786,12 +807,12 @@ const firebaseConfig = {
           await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(ADMIN_EMAIL, pwd.value));
         } catch (x) { btn.disabled = false; err.textContent = "Mot de passe incorrect."; pwd.select(); return; }
         try {
-          await profileRef(p.id).setFields([["competences", c.id], { valideLe: todayISO(), valideA: new Date().toISOString() }]);
-          closeModal(); toast("Compétence « " + c.title + " » validée");
+          await profileRef(p.id).setFields([[isComp ? "competences" : "tachesValidees", target.id], { valideLe: todayISO(), valideA: new Date().toISOString() }]);
+          closeModal(); toast((isComp ? "Compétence" : "Tâche") + " « " + target.title + " » validée");
         } catch (x) { btn.disabled = false; err.textContent = "La validation a échoué. Réessayez."; }
       } },
-        h("h2", null, "Valider la compétence"),
-        h("p", { class: "ctx" }, p.nom + " · " + c.title),
+        h("h2", null, isComp ? "Valider la compétence" : "Valider la tâche"),
+        h("p", { class: "ctx" }, p.nom + " · " + target.title),
         h("label", { class: "field", for: "validatePwd" }, "Mot de passe administrateur", pwd),
         err,
         h("div", { class: "actions" }, h("button", { class: "btn ghost", type: "button", onclick: closeModal }, "Annuler"), btn)));
@@ -843,7 +864,8 @@ const firebaseConfig = {
             : h("span", { class: "chip" + (prog.complete ? " ready" : "") }, prog.done + " / " + prog.total)),
       val ? h("div", { class: "validated-band" }, svg("check"), "Compétence validée par l’administrateur le " + frDate(val.valideLe)) : null,
       h("div", { class: "tasks" }, c.tasks.map(tk => h("div", { class: "task" },
-        h("div", { class: "task-label" }, tk.label),
+        h("div", { class: "task-label-row" }, h("span", { class: "task-label" }, tk.label),
+          taskValidation(tk, p) ? h("span", { class: "task-valid" }, svg("check"), "Validée le " + frDate(taskValidation(tk, p).valideLe)) : null),
         h("div", { class: "cells" }, Array.from({ length: tk.n }, (_, k) => {
           const i = k + 1, e = taches[iterKey(tk, i)];
           return h("button", {
@@ -853,7 +875,7 @@ const firebaseConfig = {
             onclick: () => openTask(p, c, tk, i)
           }, e ? shortDate(e.date) : h("span", { class: "n" }, i));
         }))))),
-      !val && prog.complete ? h("div", { class: "comp-foot" }, h("span", { class: "muted" }, "Toutes les itérations sont renseignées : en attente de validation par l’administrateur.")) : null);
+      !val && prog.complete ? h("div", { class: "comp-foot" }, h("span", { class: "muted" }, "Toutes les tâches sont terminées : en attente de validation de la compétence par l’administrateur.")) : null);
   }
 
   let openTaskCtx = null;
