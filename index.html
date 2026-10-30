@@ -1,0 +1,911 @@
+<title>Suivi des acquisitions RT</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&display=swap">
+<style>
+/* Layout : bandeau blanc à motif de grille HCL, puis une colonne de contenu ; angles droits partout. */
+:root {
+  --hcl-cyan: #00b5ef;
+  --hcl-navy: #004562;
+  --hcl-grey: #838282;
+  --motif-yellow: #fdd575;
+  --motif-pink: #f7bfd8;
+  --motif-cyan: #86d7f4;
+  --ok: #3f7d2f;
+  --ok-bg: #e7f1dc;
+  --danger: #b3261e;
+  --danger-bg: #fbe9e7;
+
+  --bg: #f4f8fa;
+  --surface: #ffffff;
+  --ink: #0f2a36;
+  --ink-soft: #4a5f69;
+  --title: var(--hcl-navy);
+  --line: #d4e3ea;
+  --grid-line: #d4f0fb;
+  --cell-empty: #ffffff;
+  --cell-done: var(--hcl-cyan);
+  --cell-done-ink: #00293b;
+  --btn: var(--hcl-navy);
+  --btn-ink: #ffffff;
+  --overlay: rgba(0, 41, 59, 0.55);
+
+  --font: Calibri, Carlito, "Segoe UI", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #022333; --surface: #06364c; --ink: #eaf5fa; --ink-soft: #a9c3cf; --title: #ffffff;
+    --line: #1a5470; --grid-line: #034a68; --cell-empty: #022333; --cell-done-ink: #00293b;
+    --btn: var(--hcl-cyan); --btn-ink: #00293b; --ok: #b6dc8f; --ok-bg: #1f3b22; --danger: #ffb4a9; --danger-bg: #4a1712;
+    --overlay: rgba(0, 0, 0, 0.6); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #022333; --surface: #06364c; --ink: #eaf5fa; --ink-soft: #a9c3cf; --title: #ffffff;
+  --line: #1a5470; --grid-line: #034a68; --cell-empty: #022333; --cell-done-ink: #00293b;
+  --btn: var(--hcl-cyan); --btn-ink: #00293b; --ok: #b6dc8f; --ok-bg: #1f3b22; --danger: #ffb4a9; --danger-bg: #4a1712;
+  --overlay: rgba(0, 0, 0, 0.6); color-scheme: dark;
+}
+
+* { box-sizing: border-box; border-radius: 0; }
+html, body { min-height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.4; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--hcl-cyan); outline-offset: 2px; }
+
+.app { margin: 0 auto; max-width: 1180px; }
+body.mode-mobile { background: var(--line); }
+body.mode-mobile .app { max-width: 430px; background: var(--bg); min-height: 100vh; box-shadow: 0 0 0 1px var(--line); }
+
+/* En-tête */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); overflow: hidden; }
+.top-inner { position: relative; display: flex; align-items: center; gap: 14px; padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top img { width: 56px; height: 56px; display: block; flex: none; }
+.brand { min-width: 0; flex: 1; position: relative; z-index: 1; }
+.brand-title { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--title); font-size: 1.35rem; line-height: 1.05; text-wrap: balance; }
+.brand-sub { color: var(--ink-soft); font-size: 0.95rem; }
+.motif { position: absolute; right: 0; top: 0; height: 100%; width: 340px; pointer-events: none;
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px; background-position: right top;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%); mask-image: linear-gradient(90deg, transparent, #000 70%); }
+.motif i { position: absolute; width: 40px; height: 40px; }
+.motif .y { right: 80px; top: 0; background: var(--motif-yellow); }
+.motif .p { right: 0; top: 40px; background: var(--motif-pink); }
+.motif .c { right: 40px; top: 0; background: repeating-linear-gradient(45deg, var(--motif-cyan) 0 2px, transparent 2px 6px); }
+.mode-toggle { position: relative; z-index: 1; flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--hcl-navy); background: var(--surface); color: var(--title); padding: 8px 12px; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
+:root[data-theme="dark"] .mode-toggle { border-color: var(--hcl-cyan); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mode-toggle { border-color: var(--hcl-cyan); } }
+.mode-toggle svg { width: 18px; height: 18px; }
+body.mode-mobile .motif { width: 140px; }
+body.mode-mobile .brand-title { font-size: 1.05rem; }
+body.mode-mobile .brand-sub { font-size: 0.8rem; }
+body.mode-mobile .top img { width: 44px; height: 44px; }
+body.mode-mobile .mode-toggle .lbl { display: none; }
+
+main { padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+
+h1, h2, h3 { margin: 0; color: var(--title); text-wrap: balance; }
+h1 { font-size: 1.7rem; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.1; }
+h2 { font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.03em; }
+h3 { font-size: 1.05rem; }
+p { margin: 0; }
+.muted { color: var(--ink-soft); }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.78rem; font-weight: 700; color: var(--ink-soft); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); padding: 20px; display: grid; gap: 14px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.spread { justify-content: space-between; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--btn); background: var(--btn); color: var(--btn-ink); padding: 10px 16px; font-weight: 700; cursor: pointer; text-decoration: none; }
+.btn:hover { filter: brightness(1.1); }
+.btn.ghost { background: transparent; color: var(--title); border-color: var(--line); }
+.btn.ghost:hover { border-color: var(--title); filter: none; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+:root[data-theme="dark"] .btn.danger { color: #3a0d09; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.danger { color: #3a0d09; } }
+.btn.small { padding: 6px 12px; font-size: 0.9rem; }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; filter: none; }
+.link-back { background: none; border: 0; padding: 0; color: var(--title); text-decoration: underline; cursor: pointer; font-weight: 700; justify-self: start; }
+
+label.field { display: grid; gap: 6px; font-weight: 700; color: var(--title); }
+label.field span.hint { font-weight: 400; color: var(--ink-soft); font-size: 0.9rem; }
+input[type=text], input[type=password], input[type=date], select, textarea { width: 100%; border: 1px solid var(--line); background: var(--cell-empty); padding: 10px 12px; color: var(--ink); }
+input:focus, select:focus, textarea:focus { border-color: var(--hcl-cyan); outline: none; box-shadow: 0 0 0 2px var(--hcl-cyan); }
+input[disabled] { opacity: 0.7; }
+textarea { min-height: 96px; resize: vertical; }
+.error { color: var(--danger); background: var(--danger-bg); padding: 10px 12px; font-weight: 700; }
+.error:empty { display: none; }
+.notice { background: var(--danger-bg); color: var(--danger); padding: 12px 14px; font-weight: 700; }
+
+/* Page de garde */
+.home { display: grid; gap: 24px; max-width: 760px; margin: 0 auto; width: 100%; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+body.mode-mobile .choices { grid-template-columns: 1fr; }
+@media (max-width: 560px) { .choices { grid-template-columns: 1fr; } }
+.choice { text-align: left; border: 1px solid var(--line); background: var(--surface); padding: 22px; cursor: pointer; display: grid; gap: 10px; align-content: start; min-height: 170px; position: relative; }
+.choice:hover { border-color: var(--hcl-cyan); }
+.choice .sq { width: 40px; height: 40px; background: var(--hcl-cyan); display: grid; place-items: center; color: #00293b; }
+.choice.admin .sq { background: var(--hcl-navy); color: #fff; }
+:root[data-theme="dark"] .choice.admin .sq { background: var(--motif-cyan); color: #00293b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .choice.admin .sq { background: var(--motif-cyan); color: #00293b; } }
+.choice .sq svg { width: 22px; height: 22px; }
+.choice strong { font-size: 1.2rem; color: var(--title); text-transform: uppercase; letter-spacing: 0.02em; }
+.narrow { max-width: 460px; margin: 0 auto; width: 100%; }
+
+/* Liste des profils (admin) */
+.profiles { display: grid; gap: 0; border: 1px solid var(--line); background: var(--surface); }
+.profile-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; align-items: center; padding: 14px 16px; border-top: 1px solid var(--line); }
+.profile-row:first-child { border-top: 0; }
+.profile-row .name { font-weight: 700; font-size: 1.05rem; color: var(--title); }
+.profile-row .meta { color: var(--ink-soft); font-size: 0.9rem; }
+.bar { height: 8px; background: var(--grid-line); width: 160px; max-width: 100%; }
+.bar > i { display: block; height: 100%; background: var(--hcl-cyan); }
+.profile-row .actions { display: flex; gap: 8px; }
+body.mode-mobile .profile-row { grid-template-columns: 1fr; gap: 10px; }
+@media (max-width: 620px) { .profile-row { grid-template-columns: 1fr; gap: 10px; } }
+.empty { padding: 28px 20px; text-align: center; color: var(--ink-soft); }
+
+/* Compétences */
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-bottom: 2px solid var(--hcl-cyan); padding-bottom: 6px; }
+.comps { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+body.mode-mobile .comps { grid-template-columns: 1fr; }
+@media (max-width: 420px) { .comps { grid-template-columns: 1fr; } }
+.comp { background: var(--surface); border: 1px solid var(--line); display: grid; align-content: start; min-width: 0; }
+.comp-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.comp-head h3 { font-size: 1.05rem; }
+.chip { font-size: 0.8rem; font-weight: 700; padding: 3px 8px; white-space: nowrap; font-variant-numeric: tabular-nums; border: 1px solid var(--line); color: var(--ink-soft); }
+.chip.ready { border-color: var(--hcl-cyan); color: var(--title); }
+.chip.valid { background: var(--ok-bg); color: var(--ok); border-color: var(--ok-bg); }
+.validated-band { background: var(--ok-bg); color: var(--ok); font-weight: 700; padding: 8px 14px; display: flex; gap: 8px; align-items: center; }
+.validated-band svg { width: 18px; height: 18px; flex: none; }
+.tasks { display: grid; }
+.task { padding: 10px 14px; display: grid; gap: 8px; border-top: 1px solid var(--line); }
+.task:first-child { border-top: 0; }
+.task-label { font-size: 0.97rem; }
+.cells { display: flex; flex-wrap: wrap; gap: 6px; }
+.cell { width: 44px; height: 44px; border: 1px solid var(--line); background: var(--cell-empty); cursor: pointer; display: grid; place-items: center; font-variant-numeric: tabular-nums; font-size: 0.78rem; line-height: 1.05; color: var(--ink-soft); padding: 0; }
+.cell:hover { border-color: var(--hcl-cyan); }
+.cell.done { background: var(--cell-done); border-color: var(--cell-done); color: var(--cell-done-ink); font-weight: 700; }
+.cell .n { font-weight: 700; font-size: 0.95rem; }
+.comp-foot { padding: 10px 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 16px; color: var(--ink-soft); font-size: 0.9rem; align-items: center; }
+.legend .cell { width: 22px; height: 22px; cursor: default; }
+
+.intern-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: end; }
+body.mode-mobile .intern-head { grid-template-columns: 1fr; }
+@media (max-width: 620px) { .intern-head { grid-template-columns: 1fr; } }
+.stats { display: flex; gap: 22px; flex-wrap: wrap; }
+.stat b { display: block; font-size: 1.6rem; color: var(--title); font-variant-numeric: tabular-nums; line-height: 1; }
+.stat span { font-size: 0.85rem; color: var(--ink-soft); }
+.fiche { display: inline-flex; gap: 8px; align-items: center; font-weight: 700; color: var(--title); }
+.fiche svg { width: 20px; height: 20px; color: var(--hcl-cyan); }
+
+/* Tableau récapitulatif */
+.recap { display: grid; gap: 16px; }
+.recap-comp { background: var(--surface); border: 1px solid var(--line); min-width: 0; }
+.recap-comp .comp-head { flex-wrap: wrap; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); background: var(--bg); border-top: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.pending { color: var(--ink-soft); font-style: italic; }
+.comment { white-space: pre-wrap; }
+
+/* Fenêtre contextuelle */
+.modal-back { position: fixed; inset: 0; background: var(--overlay); display: grid; place-items: center; z-index: 50; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.modal { background: var(--surface); width: 100%; max-width: 480px; max-height: 100%; overflow: auto; border-top: 6px solid var(--hcl-cyan); padding: 20px; display: grid; gap: 14px; }
+.modal.warn { border-top-color: var(--danger); }
+.modal .ctx { color: var(--ink-soft); font-size: 0.92rem; }
+.modal .actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+.locked { font-size: 0.88rem; color: var(--ink-soft); }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--hcl-navy); color: #fff; padding: 10px 18px; font-weight: 700; z-index: 60; max-width: calc(100% - 32px); }
+:root[data-theme="dark"] .toast { background: var(--hcl-cyan); color: #00293b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .toast { background: var(--hcl-cyan); color: #00293b; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .modal { animation: pop 0.14s ease-out; }
+  @keyframes pop { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="top-inner">
+      <div class="motif" aria-hidden="true"><i class="y"></i><i class="c"></i><i class="p"></i></div>
+      <img alt="Logo des Hospices Civils de Lyon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAZlBMVEUAren///8AqugAqOgAq+kApufs+f08uu2T1POL0vMArulEuezA5vi75fjh9PxWwO7S7fqd2PT1/P50yvD4/f/M6/kjtOu24vfa8ftqxu98zPEAo+drw+9Mve2n3PXR7fpYw+6n3/Yh75TfAAAH6klEQVR4nO2ciXLiOBBA5ZbkG1+AsAFD5v9/ctWSbwyhZuJZtNuvKgEfwX7obslhjCAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiAIgiD+EAHAOdc/AOLfvpcHQM54+9iI4NCeb8dMU+/KPOawctL8k9bO2AoIvRnJ9Fg0PxasfgA06WF2WlYqvjwrmH9S9BcV/9AQIKq8R9Klo7OGvFnzQ8q5g6OGgqVP/DSZmlq4aQjBvPwtaScaThpC/tJvruiiISTfCeo/GBpHFw3V6yxqqOL+bAcNuf+9oOcVfS/BPUN+e0fQ887gqqF6T9CrXTWULxrCCYeo79o4Z7iShMewac5z8VM8iLhmCA+lsFYchAA+OVIHk8HIJxnqIV4Pf2q47I2eho62bOyew55PR4ofZHgrR8JFaesNRbtMwUlq8bP5GPGxPe9X9IZQLg6o6SfKu1c8DBAdM+TH+f7d3CfYP0YDXDNc9GfyRWxmJVTjmCEs9r8RfHLMcNEa+s9CVBPcNszIkDlnGM93V/89w2VN88ZlHDPki07bdVGZrty+a4b3+f5Fiw/H4JNj3u8YftNru83GTZYPMrwmExYmQ8/7a2F4n/a87eAinM/PfJBhMrn20/GhWMbZToNiP3ry/EZOiucnGU6PPTPkD0GMo5I4ApbiNO6bDoGXhpI/sJX0bxk+DBA9G8UIl4OOYe5iYVjv0gd2MduE34vT8PpRcZVy3XCVjzJcS8SXt/2G4eGjDFdK4jr79XipA4aMvTFtoQvnk6i+C4Zv5VN/ON1BQwbn729aPZtdc8KQLaOpjwRPZ0jdMOz7Z0/veCLoqCGD4MUkYsFexLxdMWTicQKjJ1rEUB011DlVnbxHqnI5Cv43+zRR5U+oZobn+bHVVV9cRdn8To97eOhFB7NPWmcjwx9YuQdcNbf0nmX1cXeLWuBrEWL5PT+u9pMIXHwpcfHlB66+JAiCIAiCIAjir6BHBQIfXuJmVA5m5Z45IPAtTpjAOHViTzaH+m1L96eT+RWYnGPGHt3FwFyq3zG9zjaI1s/8RohGv+SC8XNdedUNZ1T419E/VHUk+C98aCsrQiaUPisCxpui8vxbLOKsw08gSPXp2a2PIIowq7wsApHjBWp9Dlr7ehS51zuCSO+wE6u8uZvrbKUo8KmJvRAY/bwKUXTj9ByG8EYFfQS/UrjOpAS+67YTNgzs2yFC3JrPjbsgVW0ey2h29ip7/XLCSwU4+WoMhwll/+V9/oEhzuc2AHjtqxxnxxQuKamygzYalzwfcWcph/DTYTRM0Ah/apsbh8hGiup7jNMcpfl8NTc0i3Nw6UO4USIawz1jJg3xZg7n/N7f2C6WTSpxFqYSKsNwGBoarfJ69Pwc395ErBEmvXhjs57AUGp13vveUZlMItE4xj+vZTQ1NGeWkoX3raIY0zn5HBOnBSExLezCJ3/XWkN+wYN4iyEmdygFRAC47d+LothdDvb03NyoydgBQNBIMF+hCZCf8Ws8zw27KJwuvw/rN7YwRBXolnHHfV5ML3r3ocSSVBhDvMNEmGUzw+ooX/bTGDXWNLge5YCuosskgKl9xEwKMDeEPhxZbplLe0O8mK4LTXEBmRejeFfYMGFDdGmAgf7WbWH1ff/Oh8gp3qlZY6tfRQzWUPDu6G1qaKpdmXelv93Q8KxM8b/mJp1MvZrK5qguCm8kslVnlSowdSn+ymJovFOMKVNeNFKoIrjEmIGPvIsln4DdvIjbyrqPCQdsNAyUBvYpuyjMMBu1F31digX+Ks30vClRQWKKFSbjF2beOAZuK77S1rjmLNw+VBrvS5ddP02tGLMTqAf8VbTW0E7913JiaMAvJUvxOs02gcguE5mW6gp9K6Yrv6FJKC5d8WSdIbD+rEgMOfzX8M5WpmPz2KWhnW/EN3PDoYHKtiqH+cRQ1wtGrGh1MWvNI9qVbuAfDJnJt37Dx3WYuTqZ9XxF98whBDbNAm6/Qn0lTNU+B4+GQVcMT9v4PQKQtEp2fU8VrD9cz3icN4mc5yrgqk3isc7nqmnUtJGLlVqbmtDXCdqEbdVY/DbijULzzjkEQfw/EMj0/bDZvRlfutfZ0c+vT1SuaRMTuQjyjqA/oqv3Vr9gK477ddWe7JsEIxlxt1sf3qhD+UP0Pe/DTbBhMG96XrZlZl0v1fY0ZW66M5nuEWDj7wPjh37Q+6mMYws/7qMTM0NmOqsKTQ5835/QmE64l3J8jq1wxFAPBNEQx7N1ODE0o4IUN/amk+abZIztCDm8uGHYwBf2QUEb+lhvxPhrMDRDO8yMF3xzlhL7lGXXJQ1cMTRRhnbIpSg2GLIu3hRgjsRHfjHKUXeGeuDkguFemPFh/sTQro3aSfDtf7rAkpmhdvd0kAOGjY3z4aCoCjUlNgPWEOPR9rHYmPHC7OE49ktNyOboimF6wmBfjTVNdUVy1hmWURSFAfrrlsEMIg+hGUJesaa52QfzHTC0JHLIpUOsxTYNneHkIe6UG0OZOGDYL4MtlBhb/KXhvRvli04xtS3+DUxs4rNbfBacbpoIn+CBKN0ZUmwPRdNvtRDudr9M95M3aZalGPaN9YGzYFwf2irS+VPY/4ExedtvinFjOMPMwtnFh90qvfEQQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQRAEQfwJ/wAJxW3a/KMn0AAAAABJRU5ErkJggg==">
+      <div class="brand">
+        <div class="brand-title">Service de Radiothérapie</div>
+        <div class="brand-sub">Suivi des acquisitions du semestre</div>
+      </div>
+      <button class="mode-toggle" id="modeToggle" type="button"></button>
+    </div>
+  </header>
+  <main id="view"></main>
+</div>
+<div id="modalRoot"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Référentiel des acquisitions ---------- */
+
+  const ADMIN_PASSWORD = "sfro";
+
+  const PROFILE_TYPES = [
+    { id: "socle", label: "Phase socle", fiche: true },
+    { id: "fst-gastro", label: "FST gastro-entérologie", fiche: true },
+    { id: "fst-pneumo", label: "FST pneumologie", fiche: true },
+    { id: "fst-uro", label: "FST urologie", fiche: true },
+    { id: "dj", label: "Docteur Junior", fiche: false },
+    { id: "cca", label: "Assistant ou CCA", fiche: false }
+  ];
+  const typeById = Object.fromEntries(PROFILE_TYPES.map(t => [t.id, t]));
+
+  const SUIVI = "Suivi en cours de traitement";
+  const CONTOUR = "Contourage";
+  const DOSI = "Validation de dosimétrie";
+
+  // Pathologies de la phase socle / FST : tâches à réaliser 3 fois.
+  const PATHO_INTERNE = {
+    "Sein": ["Prescription d’hormonothérapie", CONTOUR, SUIVI],
+    "Neuro primitive": ["Prescription de Temodal", CONTOUR, SUIVI],
+    "ORL": ["Organisation de la chimiothérapie concomitante", CONTOUR, SUIVI],
+    "Dermatologie": [CONTOUR, SUIVI],
+    "Prostate": ["Prescription d’hormonothérapie", CONTOUR, SUIVI],
+    "Rectum / canal anal": ["Organisation de la chimio concomitante / Xeloda", CONTOUR, SUIVI],
+    "Col utérin / endomètre": ["Organisation de la chimio concomitante", CONTOUR, SUIVI],
+    "Poumon": [CONTOUR, SUIVI],
+    "Digestif haut (œsophage, pancréas, estomac)": ["Organisation de la chimio concomitante / Xeloda", CONTOUR, SUIVI],
+    "Antalgique": [CONTOUR, SUIVI]
+  };
+
+  // Pathologies du Docteur Junior.
+  const PATHO_DJ = {
+    "Sein RC3D": ["Prescription d’hormonothérapie", CONTOUR, DOSI, SUIVI, "VFT"],
+    "Sein complexe": [CONTOUR, DOSI, SUIVI, "VFT"],
+    "Neuro primitive": ["Prescription de Temodal", CONTOUR, DOSI, SUIVI, "VFT"],
+    "ORL": ["Organisation de la chimiothérapie concomitante", CONTOUR, DOSI, SUIVI, "VFT"],
+    "Dermatologie": [CONTOUR, DOSI, SUIVI, "VFT"],
+    "Prostate": ["Prescription d’hormonothérapie", CONTOUR, DOSI, SUIVI, "VFT"],
+    "Rectum / canal anal": ["Organisation de la chimio concomitante / Xeloda", CONTOUR, DOSI, SUIVI, "VFT"],
+    "Col utérin / endomètre": ["Organisation de la chimio concomitante", "Organisation de la curiethérapie", CONTOUR, DOSI, SUIVI, "VFT"],
+    "Poumon": ["Organisation de la chimio concomitante", CONTOUR, DOSI, SUIVI, "VFT"],
+    "Digestif haut (œsophage, pancréas, estomac)": ["Organisation de la chimio concomitante / Xeloda", CONTOUR, DOSI, SUIVI, "VFT"],
+    "Antalgique": [CONTOUR, DOSI, SUIVI, "VFT"]
+  };
+  const PATHO_CCA = Object.fromEntries(Object.keys(PATHO_DJ).map(k => [k, [CONTOUR, DOSI]]));
+
+  const pick = (obj, keys) => Object.fromEntries(keys.map(k => [k, obj[k]]));
+
+  function slug(s) {
+    return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+      .replace(/œ/g, "oe").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+  }
+
+  // Une tâche : { label, n } ; une compétence : { title, tasks } ; une section : { title, comps }.
+  const t = (label, n) => ({ label, n });
+  const pathoComps = (map, n) => Object.entries(map).map(([title, tasks]) => ({ title, tasks: tasks.map(l => t(l, n)) }));
+
+  function interneCurriculum(medecins, rcp, pathos, curie) {
+    const contourage = [t("Vérifier et valider une fusion", 12)];
+    const comps2 = [
+      { title: "Consultation", tasks: medecins.map(m => t("Préparer 3 dossiers avec " + m, 3)) },
+      { title: "RCP du CHLS", tasks: rcp.map(r => t("Assister à la RCP " + r, 2)) },
+      { title: "Contourage", tasks: contourage }
+    ];
+    if (curie) comps2.push({ title: "Curiethérapie", tasks: [t("Assister à la pose d’une curiethérapie utéro-vaginale", 12)] });
+    return [
+      { title: "Activités du service", comps: [
+        { title: "Réunion du matin", tasks: [
+          t("Présentation des dossiers", 5),
+          t("Validation des visites « réunion du matin »", 5),
+          t("Validation des images de la veille avec mise de l’alerte", 5)] },
+        { title: "Plateau technique", tasks: [t("Assister à une séance d’IRM Linac", 5)] },
+        { title: "Scanner", tasks: [t("Vérification d’une séquence 4D", 5), t("Vérification d’une préparation rectale", 5)] },
+        { title: "Recherche", tasks: [t("Participer à une inclusion dans un essai (avec ARC)", 5), t("Présentation biblio", 5)] }
+      ] },
+      { title: "Consultation, RCP et contourage", comps: comps2 },
+      { title: "Pathologies", comps: pathoComps(pathos, 3) }
+    ];
+  }
+
+  const CURRICULA = {
+    "socle": interneCurriculum(
+      ["OC", "SH", "MB", "DB", "AB", "IC", "ABL", "MLB", "AL", "EM", "ALAY", "JL"],
+      ["onco méd", "uro", "pneumo", "dermato", "gynéco", "rhumato", "dig"],
+      PATHO_INTERNE, true),
+    "fst-gastro": interneCurriculum(["SH", "MB", "DB", "ABL", "ALAY", "JL"], ["dig"],
+      pick(PATHO_INTERNE, ["Rectum / canal anal", "Digestif haut (œsophage, pancréas, estomac)", "Antalgique"]), false),
+    "fst-pneumo": interneCurriculum(["ABL", "MLB", "AL", "ALAY", "JL"], ["pneumo"],
+      pick(PATHO_INTERNE, ["Poumon", "Antalgique"]), false),
+    "fst-uro": interneCurriculum(["OC", "SH", "ABL", "ALAY", "JL"], ["uro"],
+      pick(PATHO_INTERNE, ["Prostate", "Antalgique"]), false),
+    "dj": [
+      { title: "Activités du service", comps: [
+        { title: "Réunion du matin", tasks: [
+          t("Présentation des dossiers", 10),
+          t("Validation des visites « réunion du matin »", 10),
+          t("Validation des images de la veille avec mise de l’alerte", 10)] },
+        { title: "Plateau technique", tasks: [
+          t("Validation d’une première séance en RC3D", 10),
+          t("Validation d’une première séance en électrons", 10),
+          t("Validation d’une première séance VMAT", 10),
+          t("Validation d’une stéréotaxie pulmonaire", 10),
+          t("Validation d’une stéréotaxie sous-diaphragmatique", 10),
+          t("Suivre une séance sur l’IRM Linac", 10)] },
+        { title: "Scanner", tasks: [
+          t("Vérification d’une séquence 4D", 10),
+          t("Vérification d’une préparation rectale", 10),
+          t("Simulation d’un champ direct en électrons", 10),
+          t("Programmer une replanification", 10)] },
+        { title: "Recherche", tasks: [t("Participer à une inclusion dans un essai (avec ARC)", 10)] }
+      ] },
+      { title: "Contourage", comps: [
+        { title: "Contourage", tasks: [
+          t("Vérifier et valider une fusion", 10),
+          t("Utilisation de templates de structures", 10),
+          t("Utiliser SmartAdapt", 10)] }
+      ] },
+      { title: "Pathologies", comps: pathoComps(PATHO_DJ, 3) }
+    ],
+    "cca": [
+      { title: "Activités du service", comps: [
+        { title: "Réunion du matin", tasks: [
+          t("Présentation des dossiers", 3),
+          t("Validation des visites « réunion du matin »", 3),
+          t("Validation des images de la veille avec mise de l’alerte", 3)] },
+        { title: "Plateau technique", tasks: [
+          t("Validation d’une première séance en RC3D", 3),
+          t("Validation d’une première séance en électrons", 3),
+          t("Validation d’une première séance VMAT", 3),
+          t("Validation d’une stéréotaxie pulmonaire", 3),
+          t("Validation d’une stéréotaxie sous-diaphragmatique", 3)] },
+        { title: "Scanner", tasks: [
+          t("Simulation d’un champ direct en électrons", 3),
+          t("Programmer une replanification", 3)] },
+        { title: "Recherche", tasks: [t("Participer à une inclusion dans un essai (avec ARC)", 3)] }
+      ] },
+      { title: "Contourage et IRM Linac", comps: [
+        { title: "Contourage", tasks: [
+          t("Vérifier et valider une fusion", 3),
+          t("Utilisation de templates de structures", 3),
+          t("Utiliser SmartAdapt", 3),
+          t("Validation des structures", 3)] },
+        { title: "IRM Linac", tasks: [
+          t("Inclusion d’un patient dans ISRAR", 3),
+          t("Gestion d’un nouveau patient IRM (cf. document spécifique)", 3)] }
+      ] },
+      { title: "Pathologies", comps: pathoComps(PATHO_CCA, 3) }
+    ]
+  };
+
+  // Identifiants stables : compétence = section + titre ; itération = compétence + tâche + numéro.
+  for (const sections of Object.values(CURRICULA)) {
+    for (const s of sections) {
+      for (const c of s.comps) {
+        c.id = slug(s.title) + "_" + slug(c.title);
+        for (const tk of c.tasks) tk.id = c.id + "__" + slug(tk.label);
+      }
+    }
+  }
+  const iterKey = (task, i) => task.id + "__" + i;
+
+  function compProgress(comp, profile) {
+    let done = 0, total = 0;
+    const taches = (profile && profile.taches) || {};
+    for (const tk of comp.tasks) for (let i = 1; i <= tk.n; i++) { total++; if (taches[iterKey(tk, i)]) done++; }
+    return { done, total, complete: total > 0 && done === total };
+  }
+  function profileProgress(profile) {
+    const sections = CURRICULA[profile.type] || [];
+    let done = 0, total = 0, comps = 0, valid = 0;
+    for (const s of sections) for (const c of s.comps) {
+      const p = compProgress(c, profile); done += p.done; total += p.total; comps++;
+      if (profile.competences && profile.competences[c.id]) valid++;
+    }
+    return { done, total, comps, valid };
+  }
+
+  /* ---------- Outils ---------- */
+
+  const $view = document.getElementById("view");
+  const $modalRoot = document.getElementById("modalRoot");
+
+  function h(tag, attrs, ...children) {
+    const el = document.createElement(tag);
+    if (attrs) for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === "class") el.className = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else if (k === "html") el.innerHTML = v;
+      else el.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of children.flat()) {
+      if (c == null || c === false) continue;
+      el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    }
+    return el;
+  }
+  const icon = {
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><rect x="4" y="11" width="16" height="10"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"><path d="M4 12l5 5L20 6"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h7"/></svg>',
+    desktop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><rect x="2" y="4" width="20" height="13"/><path d="M8 21h8M12 17v4"/></svg>',
+    mobile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><rect x="6" y="2" width="12" height="20"/><path d="M11 18h2"/></svg>'
+  };
+  const svg = name => h("span", { html: icon[name], style: "display:contents" });
+
+  function todayISO() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function frDate(iso) {
+    if (!iso) return "";
+    const [y, m, d] = String(iso).slice(0, 10).split("-");
+    return d + "/" + m + "/" + y;
+  }
+  function shortDate(iso) { const [, m, d] = String(iso).slice(0, 10).split("-"); return d + "/" + m; }
+
+  function store(key, val) { try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; } }
+  function sstore(key, val) { try { if (val === undefined) return sessionStorage.getItem(key); if (val === null) sessionStorage.removeItem(key); else sessionStorage.setItem(key, val); } catch (e) { return null; } }
+
+  let toastTimer;
+  function toast(msg) {
+    document.querySelectorAll(".toast").forEach(n => n.remove());
+    const el = h("div", { class: "toast", role: "status" }, msg);
+    document.body.append(el);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.remove(), 2600);
+  }
+
+  function openModal(build, opts) {
+    closeModal();
+    const box = h("div", { class: "modal" + (opts && opts.warn ? " warn" : ""), role: "dialog", "aria-modal": "true" });
+    const back = h("div", { class: "modal-back", onclick: e => { if (e.target === back) closeModal(); } }, box);
+    build(box);
+    $modalRoot.append(back);
+    const first = box.querySelector("input:not([disabled]), textarea, select, button");
+    if (first) setTimeout(() => first.focus(), 30);
+  }
+  function closeModal() { $modalRoot.innerHTML = ""; }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+  /* ---------- Affichage ordinateur / mobile ---------- */
+
+  let mode = store("rt-mode") || (window.innerWidth < 700 ? "mobile" : "desktop");
+  const $toggle = document.getElementById("modeToggle");
+  function applyMode() {
+    document.body.classList.toggle("mode-mobile", mode === "mobile");
+    const next = mode === "mobile" ? "desktop" : "mobile";
+    $toggle.innerHTML = "";
+    $toggle.append(svg(next), h("span", { class: "lbl" }, next === "mobile" ? "Affichage mobile" : "Affichage ordinateur"));
+    $toggle.setAttribute("aria-label", next === "mobile" ? "Passer à l’affichage mobile" : "Passer à l’affichage ordinateur");
+    $toggle.title = $toggle.getAttribute("aria-label");
+  }
+  $toggle.addEventListener("click", () => { mode = mode === "mobile" ? "desktop" : "mobile"; store("rt-mode", mode); applyMode(); });
+  applyMode();
+
+  /* ---------- Stockage en ligne ---------- */
+
+  let db = null, assets = null, dbReady = false;
+  let unsubs = [];
+  function clearSubs() { unsubs.forEach(u => { try { u(); } catch (e) {} }); unsubs = []; }
+
+  const profileRef = id => db.doc("profils/" + id);
+
+  /* ---------- Routage ---------- */
+
+  let route = { name: "home" };
+  function go(name, params) {
+    clearSubs(); closeModal();
+    route = Object.assign({ name }, params || {});
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function render() {
+    $view.innerHTML = "";
+    if (!dbReady) {
+      $view.append(h("div", { class: "panel narrow" }, h("p", { class: "muted" }, "Connexion au stockage en ligne…")));
+      return;
+    }
+    if (!db) {
+      $view.append(h("div", { class: "notice narrow" },
+        "Le stockage en ligne n’est pas disponible dans cette vue. Ouvrez la page depuis son lien claude.ai en étant connecté pour accéder aux profils."));
+    }
+    ({ home: viewHome, internLogin: viewInternLogin, adminLogin: viewAdminLogin, admin: viewAdmin, adminProfile: viewAdminProfile, intern: viewIntern }[route.name] || viewHome)();
+  }
+
+  /* ---------- Page de garde ---------- */
+
+  function viewHome() {
+    $view.append(h("section", { class: "home" },
+      h("div", { style: "display:grid;gap:8px" },
+        h("div", { class: "eyebrow" }, "Internes et nouveaux assistants"),
+        h("h1", null, "Suivi des acquisitions"),
+        h("p", { class: "muted" }, "Chaque interne ou assistant renseigne au fil du semestre les tâches réalisées, avec la date et le nom du sénior. Les compétences sont ensuite validées par l’administrateur.")),
+      h("div", { class: "choices" },
+        h("button", { class: "choice", type: "button", onclick: () => go("internLogin") },
+          h("span", { class: "sq" }, svg("user")),
+          h("strong", null, "Accès interne / assistant"),
+          h("span", { class: "muted" }, "Saisir le nom de votre profil pour ouvrir votre suivi.")),
+        h("button", { class: "choice admin", type: "button", onclick: () => sstore("rt-admin") === "1" ? go("admin") : go("adminLogin") },
+          h("span", { class: "sq" }, svg("lock")),
+          h("strong", null, "Accès administrateur"),
+          h("span", { class: "muted" }, "Gérer les profils, consulter les suivis et valider les compétences.")))
+    ));
+  }
+
+  function viewInternLogin() {
+    const err = h("div", { class: "error", role: "alert" });
+    const input = h("input", { type: "text", id: "profileName", autocomplete: "off", placeholder: "Ex. : Marie Dupont" });
+    const form = h("form", { class: "panel narrow", onsubmit: async e => {
+      e.preventDefault(); err.textContent = "";
+      const name = input.value.trim();
+      if (!name) { err.textContent = "Saisissez le nom de votre profil."; return; }
+      if (!db) { err.textContent = "Le stockage en ligne n’est pas disponible."; return; }
+      const id = slug(name);
+      try {
+        const snap = await profileRef(id).get();
+        if (!snap.exists) { err.textContent = "Aucun profil ne porte ce nom. Vérifiez l’orthographe ou demandez à l’administrateur de créer votre profil."; return; }
+        sstore("rt-intern", id);
+        go("intern", { id });
+      } catch (x) { err.textContent = "La connexion au stockage a échoué. Réessayez dans un instant."; }
+    } },
+      h("button", { type: "button", class: "link-back", onclick: () => go("home") }, "← Page de garde"),
+      h("h2", null, "Accès interne / assistant"),
+      h("label", { class: "field", for: "profileName" }, "Nom du profil", h("span", { class: "hint" }, "Tel que créé par l’administrateur (majuscules et accents indifférents)."), input),
+      err,
+      h("div", { class: "row" }, h("button", { class: "btn", type: "submit" }, "Ouvrir mon suivi")));
+    $view.append(form);
+  }
+
+  function viewAdminLogin() {
+    const err = h("div", { class: "error", role: "alert" });
+    const input = h("input", { type: "password", id: "adminPwd", autocomplete: "current-password" });
+    $view.append(h("form", { class: "panel narrow", onsubmit: e => {
+      e.preventDefault();
+      if (input.value === ADMIN_PASSWORD) { sstore("rt-admin", "1"); go("admin"); }
+      else { err.textContent = "Mot de passe incorrect."; input.select(); }
+    } },
+      h("button", { type: "button", class: "link-back", onclick: () => go("home") }, "← Page de garde"),
+      h("h2", null, "Accès administrateur"),
+      h("label", { class: "field", for: "adminPwd" }, "Mot de passe", input),
+      err,
+      h("div", { class: "row" }, h("button", { class: "btn", type: "submit" }, "Se connecter"))));
+  }
+
+  /* ---------- Administration ---------- */
+
+  function requireAdmin() { if (sstore("rt-admin") !== "1") { go("adminLogin"); return false; } return true; }
+
+  function viewAdmin() {
+    if (!requireAdmin()) return;
+    const list = h("div", { class: "profiles" }, h("div", { class: "empty" }, "Chargement des profils…"));
+    const ficheBox = h("div", { class: "panel" });
+
+    $view.append(
+      h("div", { class: "row spread" },
+        h("div", { style: "display:grid;gap:4px" }, h("div", { class: "eyebrow" }, "Administration"), h("h1", null, "Profils")),
+        h("div", { class: "row" },
+          h("button", { class: "btn", type: "button", onclick: openCreateProfile }, "+ Créer un profil"),
+          h("button", { class: "btn ghost", type: "button", onclick: () => { sstore("rt-admin", null); go("home"); } }, "Se déconnecter"))),
+      list,
+      ficheBox);
+
+    renderFicheAdmin(ficheBox);
+    if (!db) { list.innerHTML = ""; list.append(h("div", { class: "empty" }, "Profils indisponibles hors ligne.")); return; }
+
+    unsubs.push(db.collection("profils").onSnapshot(snap => {
+      list.innerHTML = "";
+      const docs = snap.docs.map(d => Object.assign({ id: d.id }, d.data()))
+        .sort((a, b) => String(a.nom).localeCompare(String(b.nom), "fr"));
+      if (!docs.length) {
+        list.append(h("div", { class: "empty" }, "Aucun profil pour l’instant. Créez le premier avec « Créer un profil »."));
+        return;
+      }
+      for (const p of docs) {
+        const pr = profileProgress(p);
+        const pct = pr.total ? Math.round(100 * pr.done / pr.total) : 0;
+        list.append(h("div", { class: "profile-row" },
+          h("div", { style: "display:grid;gap:4px;min-width:0" },
+            h("span", { class: "name" }, p.nom),
+            h("span", { class: "meta" }, (typeById[p.type] || {}).label || p.type, " · ", pr.done + "/" + pr.total + " itérations · " + pr.valid + "/" + pr.comps + " compétences validées")),
+          h("div", { class: "bar", title: pct + " %" }, h("i", { style: "width:" + pct + "%" })),
+          h("div", { class: "actions" },
+            h("button", { class: "btn small", type: "button", onclick: () => go("adminProfile", { id: p.id }) }, "Suivi"),
+            h("button", { class: "btn small danger", type: "button", onclick: () => confirmDelete(p) }, "Supprimer"))));
+      }
+    }, () => { list.innerHTML = ""; list.append(h("div", { class: "empty" }, "Impossible de charger les profils. Rechargez la page.")); }));
+  }
+
+  function renderFicheAdmin(box) {
+    box.innerHTML = "";
+    box.append(h("h2", null, "Fiche de poste des internes"),
+      h("p", { class: "muted" }, "Le lien « Fiche de poste » apparaît en haut de la page des profils Phase socle et FST (pas pour Docteur Junior ni Assistant / CCA)."));
+    const status = h("p", null, "Chargement…");
+    box.append(status);
+    if (!db) { status.textContent = "Indisponible hors ligne."; return; }
+    unsubs.push(db.doc("config/fiche").onSnapshot(s => {
+      status.innerHTML = "";
+      const d = s.exists ? s.data() : null;
+      if (d && d.url) status.append("Fichier en ligne : ", h("a", { href: d.url, target: "_blank", rel: "noopener", class: "fiche" }, svg("doc"), d.nom || "Fiche de poste"));
+      else status.append(h("span", { class: "muted" }, "Aucune fiche déposée pour l’instant."));
+    }));
+    if (assets) {
+      const file = h("input", { type: "file", id: "ficheFile", accept: "application/pdf" });
+      const err = h("div", { class: "error", role: "alert" });
+      box.append(h("div", { class: "row" }, file,
+        h("button", { class: "btn small", type: "button", onclick: async () => {
+          err.textContent = "";
+          const f = file.files && file.files[0];
+          if (!f) { err.textContent = "Choisissez d’abord le fichier PDF."; return; }
+          try {
+            const up = await assets.upload(f);
+            await db.doc("config/fiche").set({ url: up.url, id: up.id, nom: f.name, deposeLe: new Date().toISOString() });
+            toast("Fiche de poste déposée");
+          } catch (x) { err.textContent = "Le dépôt a échoué (" + ((x && x.code) || "erreur") + "). Vérifiez que le fichier est un PDF de moins de 20 Mo."; }
+        } }, "Déposer la fiche")), err);
+    }
+  }
+
+  function openCreateProfile() {
+    openModal(box => {
+      const err = h("div", { class: "error", role: "alert" });
+      const name = h("input", { type: "text", id: "newName", autocomplete: "off", placeholder: "Ex. : Marie Dupont" });
+      const sel = h("select", { id: "newType" }, h("option", { value: "" }, "Choisir…"), PROFILE_TYPES.map(tp => h("option", { value: tp.id }, tp.label)));
+      const submit = h("button", { class: "btn", type: "submit" }, "Créer le profil");
+      box.append(h("form", { style: "display:grid;gap:14px", onsubmit: async e => {
+        e.preventDefault(); err.textContent = "";
+        const nom = name.value.trim().replace(/\s+/g, " ");
+        const id = slug(nom);
+        if (!id) { err.textContent = "Saisissez un nom de compte."; return; }
+        if (!sel.value) { err.textContent = "Choisissez le profil."; return; }
+        submit.disabled = true;
+        try {
+          const ref = profileRef(id);
+          const ex = await ref.get();
+          if (ex.exists) { err.textContent = "Un profil porte déjà ce nom (« " + ex.data().nom + " »). Choisissez un autre nom."; submit.disabled = false; return; }
+          await ref.set({ nom, type: sel.value, creeLe: new Date().toISOString(), taches: {}, competences: {} });
+          closeModal(); toast("Profil « " + nom + " » créé");
+        } catch (x) {
+          err.textContent = x && x.code === "quota_exceeded" ? "Le stockage est plein : supprimez d’anciens profils." : "La création a échoué. Réessayez.";
+          submit.disabled = false;
+        }
+      } },
+        h("h2", null, "Créer un profil"),
+        h("label", { class: "field", for: "newName" }, "Nom du compte", h("span", { class: "hint" }, "C’est ce nom que l’interne saisira pour accéder à son suivi."), name),
+        h("label", { class: "field", for: "newType" }, "Profil", sel),
+        err,
+        h("div", { class: "actions" }, h("button", { class: "btn ghost", type: "button", onclick: closeModal }, "Annuler"), submit)));
+    });
+  }
+
+  function confirmDelete(p) {
+    openModal(box => {
+      const btn = h("button", { class: "btn danger", type: "button", onclick: async () => {
+        btn.disabled = true;
+        try { await profileRef(p.id).delete(); closeModal(); toast("Profil supprimé"); }
+        catch (x) { btn.disabled = false; toast("La suppression a échoué. Réessayez."); }
+      } }, "Supprimer définitivement");
+      box.append(
+        h("h2", null, "Supprimer le profil ?"),
+        h("p", null, "Profil : ", h("strong", null, p.nom), " (" + ((typeById[p.type] || {}).label || p.type) + ")"),
+        h("div", { class: "notice" }, "Un profil supprimé ne peut pas être récupéré."),
+        h("div", { class: "actions" }, h("button", { class: "btn ghost", type: "button", onclick: closeModal }, "Annuler"), btn));
+    }, { warn: true });
+  }
+
+  function viewAdminProfile() {
+    if (!requireAdmin()) return;
+    const wrap = h("div", { style: "display:grid;gap:20px" }, h("p", { class: "muted" }, "Chargement du suivi…"));
+    $view.append(h("button", { type: "button", class: "link-back", onclick: () => go("admin") }, "← Liste des profils"), wrap);
+    if (!db) return;
+    unsubs.push(profileRef(route.id).onSnapshot(snap => {
+      wrap.innerHTML = "";
+      if (!snap.exists) { wrap.append(h("div", { class: "panel" }, "Ce profil n’existe plus.")); return; }
+      const p = Object.assign({ id: snap.id }, snap.data());
+      const pr = profileProgress(p);
+      wrap.append(
+        h("div", { style: "display:grid;gap:6px" },
+          h("div", { class: "eyebrow" }, "Suivi des acquisitions · " + ((typeById[p.type] || {}).label || p.type)),
+          h("h1", null, p.nom)),
+        statsRow(pr));
+      for (const s of CURRICULA[p.type] || []) {
+        wrap.append(h("div", { class: "section-head" }, h("h2", null, s.title)));
+        const recap = h("div", { class: "recap" });
+        for (const c of s.comps) recap.append(recapComp(c, p));
+        wrap.append(recap);
+      }
+    }));
+  }
+
+  function statsRow(pr) {
+    return h("div", { class: "stats" },
+      h("div", { class: "stat" }, h("b", null, pr.done + " / " + pr.total), h("span", null, "itérations réalisées")),
+      h("div", { class: "stat" }, h("b", null, pr.valid + " / " + pr.comps), h("span", null, "compétences validées")));
+  }
+
+  function recapComp(c, p) {
+    const prog = compProgress(c, p);
+    const val = p.competences && p.competences[c.id];
+    const head = h("div", { class: "comp-head" }, h("h3", null, c.title),
+      val ? h("span", { class: "chip valid" }, "Validée le " + frDate(val.valideLe))
+          : h("span", { class: "chip" + (prog.complete ? " ready" : "") }, prog.done + " / " + prog.total));
+    const rows = [];
+    const taches = p.taches || {};
+    for (const tk of c.tasks) for (let i = 1; i <= tk.n; i++) {
+      const e = taches[iterKey(tk, i)];
+      if (!e) continue;
+      rows.push(h("tr", null,
+        h("td", null, tk.label), h("td", { class: "num" }, i + " / " + tk.n),
+        h("td", { class: "num" }, frDate(e.date)), h("td", null, e.senior || ""),
+        h("td", { class: "comment" }, e.commentaire || "")));
+    }
+    const table = rows.length
+      ? h("div", { class: "table-wrap" }, h("table", null,
+          h("thead", null, h("tr", null, h("th", null, "Tâche"), h("th", null, "Itération"), h("th", null, "Date"), h("th", null, "Sénior"), h("th", null, "Commentaire"))),
+          h("tbody", null, rows)))
+      : h("p", { class: "muted", style: "padding:12px 14px" }, "Aucune tâche renseignée pour l’instant.");
+    let foot;
+    if (val) foot = h("div", { class: "validated-band" }, svg("check"), "Compétence validée le " + frDate(val.valideLe));
+    else if (prog.complete) foot = h("div", { class: "comp-foot" }, h("span", null, "Toutes les itérations sont renseignées."),
+      h("button", { class: "btn small", type: "button", onclick: () => openValidate(c, p) }, "Valider la compétence"));
+    else foot = h("div", { class: "comp-foot" }, h("span", { class: "muted" }, "Validation possible lorsque les " + prog.total + " itérations seront renseignées (" + (prog.total - prog.done) + " restantes)."));
+    return h("div", { class: "recap-comp" }, head, table, foot);
+  }
+
+  function openValidate(c, p) {
+    openModal(box => {
+      const err = h("div", { class: "error", role: "alert" });
+      const pwd = h("input", { type: "password", id: "validatePwd", autocomplete: "current-password" });
+      const btn = h("button", { class: "btn", type: "submit" }, "Valider");
+      box.append(h("form", { style: "display:grid;gap:14px", onsubmit: async e => {
+        e.preventDefault(); err.textContent = "";
+        if (pwd.value !== ADMIN_PASSWORD) { err.textContent = "Mot de passe incorrect."; pwd.select(); return; }
+        btn.disabled = true;
+        try {
+          await profileRef(p.id).update({ competences: { [c.id]: { valideLe: todayISO(), valideA: new Date().toISOString() } } });
+          closeModal(); toast("Compétence « " + c.title + " » validée");
+        } catch (x) { btn.disabled = false; err.textContent = "La validation a échoué. Réessayez."; }
+      } },
+        h("h2", null, "Valider la compétence"),
+        h("p", { class: "ctx" }, p.nom + " · " + c.title),
+        h("label", { class: "field", for: "validatePwd" }, "Mot de passe administrateur", pwd),
+        err,
+        h("div", { class: "actions" }, h("button", { class: "btn ghost", type: "button", onclick: closeModal }, "Annuler"), btn)));
+    });
+  }
+
+  /* ---------- Page interne ---------- */
+
+  function viewIntern() {
+    const wrap = h("div", { style: "display:grid;gap:20px" }, h("p", { class: "muted" }, "Chargement de votre suivi…"));
+    $view.append(h("button", { type: "button", class: "link-back", onclick: () => { sstore("rt-intern", null); go("home"); } }, "← Quitter mon suivi"), wrap);
+    if (!db) return;
+    let fiche = null, profile = null;
+    const draw = () => {
+      wrap.innerHTML = "";
+      if (!profile) { wrap.append(h("div", { class: "panel" }, "Ce profil n’existe plus. Contactez l’administrateur.")); return; }
+      const tp = typeById[profile.type] || { label: profile.type };
+      const pr = profileProgress(profile);
+      const head = h("div", { class: "intern-head" },
+        h("div", { style: "display:grid;gap:6px;min-width:0" },
+          h("div", { class: "eyebrow" }, tp.label),
+          h("h1", null, profile.nom),
+          tp.fiche ? (fiche && fiche.url
+            ? h("a", { class: "fiche", href: fiche.url, target: "_blank", rel: "noopener" }, svg("doc"), "Fiche de poste des internes (PDF)")
+            : h("span", { class: "fiche muted" }, svg("doc"), "Fiche de poste : pas encore déposée par l’administrateur")) : null),
+        statsRow(pr));
+      wrap.append(head,
+        h("div", { class: "legend" },
+          h("span", { class: "row", style: "gap:6px" }, h("span", { class: "cell" }), "À faire"),
+          h("span", { class: "row", style: "gap:6px" }, h("span", { class: "cell done" }), "Réalisée (date)"),
+          h("span", null, "Cliquez sur une case pour renseigner la date, le sénior et un commentaire.")));
+      for (const s of CURRICULA[profile.type] || []) {
+        wrap.append(h("div", { class: "section-head" }, h("h2", null, s.title)));
+        wrap.append(h("div", { class: "comps" }, s.comps.map(c => internComp(c, profile))));
+      }
+    };
+    unsubs.push(profileRef(route.id).onSnapshot(snap => {
+      profile = snap.exists ? Object.assign({ id: snap.id }, snap.data()) : null;
+      draw();
+      if (profile) refreshOpenTaskModal(profile);
+    }));
+    unsubs.push(db.doc("config/fiche").onSnapshot(s => { fiche = s.exists ? s.data() : null; if (profile) draw(); }));
+  }
+
+  function internComp(c, p) {
+    const prog = compProgress(c, p);
+    const val = p.competences && p.competences[c.id];
+    const taches = p.taches || {};
+    return h("article", { class: "comp" },
+      h("div", { class: "comp-head" }, h("h3", null, c.title),
+        val ? h("span", { class: "chip valid" }, "Validée")
+            : h("span", { class: "chip" + (prog.complete ? " ready" : "") }, prog.done + " / " + prog.total)),
+      val ? h("div", { class: "validated-band" }, svg("check"), "Compétence validée par l’administrateur le " + frDate(val.valideLe)) : null,
+      h("div", { class: "tasks" }, c.tasks.map(tk => h("div", { class: "task" },
+        h("div", { class: "task-label" }, tk.label),
+        h("div", { class: "cells" }, Array.from({ length: tk.n }, (_, k) => {
+          const i = k + 1, e = taches[iterKey(tk, i)];
+          return h("button", {
+            class: "cell" + (e ? " done" : ""), type: "button",
+            title: e ? "Réalisée le " + frDate(e.date) + " avec " + e.senior : "Itération " + i + " à renseigner",
+            "aria-label": tk.label + ", itération " + i + (e ? ", réalisée le " + frDate(e.date) : ", à faire"),
+            onclick: () => openTask(p, c, tk, i)
+          }, e ? shortDate(e.date) : h("span", { class: "n" }, i));
+        }))))),
+      !val && prog.complete ? h("div", { class: "comp-foot" }, h("span", { class: "muted" }, "Toutes les itérations sont renseignées : en attente de validation par l’administrateur.")) : null);
+  }
+
+  let openTaskCtx = null;
+  function refreshOpenTaskModal(p) {
+    // Si l'entrée vient d'être validée depuis un autre poste, on verrouille la fenêtre ouverte.
+    if (!openTaskCtx || !$modalRoot.firstChild) return;
+    const { c, tk, i, locked } = openTaskCtx;
+    const e = (p.taches || {})[iterKey(tk, i)];
+    if (e && !locked) openTask(p, c, tk, i);
+  }
+
+  function openTask(p, c, tk, i) {
+    const key = iterKey(tk, i);
+    const entry = (p.taches || {})[key];
+    openTaskCtx = { c, tk, i, locked: !!entry };
+    openModal(box => {
+      const err = h("div", { class: "error", role: "alert" });
+      const date = h("input", { type: "date", id: "taskDate", value: entry ? entry.date : todayISO(), max: todayISO(), disabled: !!entry });
+      const senior = h("input", { type: "text", id: "taskSenior", value: entry ? entry.senior : "", placeholder: "Ex. : Dr Martin", disabled: !!entry, autocomplete: "off" });
+      const comment = h("textarea", { id: "taskComment", placeholder: "Facultatif" });
+      comment.value = entry ? (entry.commentaire || "") : "";
+      const btn = h("button", { class: "btn", type: "submit" }, entry ? "Valider le commentaire" : "Valider");
+      box.append(h("form", { style: "display:grid;gap:14px", onsubmit: async e => {
+        e.preventDefault(); err.textContent = "";
+        btn.disabled = true;
+        try {
+          if (entry) {
+            await profileRef(p.id).update({ taches: { [key]: { commentaire: comment.value.trim(), modifieLe: new Date().toISOString() } } });
+            closeModal(); toast("Commentaire enregistré");
+          } else {
+            if (!date.value) { err.textContent = "Indiquez la date de réalisation."; btn.disabled = false; return; }
+            if (!senior.value.trim()) { err.textContent = "Indiquez le nom du sénior."; btn.disabled = false; return; }
+            await profileRef(p.id).update({ taches: { [key]: { date: date.value, senior: senior.value.trim(), commentaire: comment.value.trim(), saisiLe: new Date().toISOString() } } });
+            closeModal(); toast("Tâche validée");
+          }
+        } catch (x) { btn.disabled = false; err.textContent = "L’enregistrement a échoué. Réessayez."; }
+      } },
+        h("div", { style: "display:grid;gap:4px" },
+          h("div", { class: "eyebrow" }, c.title + " · itération " + i + " / " + tk.n),
+          h("h2", { style: "text-transform:none;letter-spacing:0" }, tk.label)),
+        h("label", { class: "field", for: "taskDate" }, "Date de réalisation", date),
+        h("label", { class: "field", for: "taskSenior" }, "Nom du sénior", senior),
+        entry ? h("p", { class: "locked" }, "Tâche validée le " + frDate(entry.saisiLe) + " : la date et le sénior ne sont plus modifiables, le commentaire reste modifiable.") : null,
+        h("label", { class: "field", for: "taskComment" }, "Commentaire", comment),
+        err,
+        h("div", { class: "actions" }, h("button", { class: "btn ghost", type: "button", onclick: closeModal }, "Annuler"), btn)));
+    });
+  }
+
+  /* ---------- Démarrage ---------- */
+
+  render();
+  (async () => {
+    try {
+      for (let k = 0; k < 30 && !(window.claude && window.claude.use); k++) await new Promise(r => setTimeout(r, 100));
+      if (window.claude && window.claude.use) {
+        const [d, a] = await Promise.all([window.claude.use("db"), window.claude.use("assets").catch(() => null)]);
+        db = d; assets = a;
+      }
+    } catch (e) { db = null; }
+    dbReady = true;
+    const internId = sstore("rt-intern");
+    if (db && internId) go("intern", { id: internId });
+    else render();
+  })();
+})();
+</script>
