@@ -105,6 +105,8 @@ p { margin: 0; }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--btn); background: var(--btn); color: var(--btn-ink); padding: 10px 16px; font-weight: 700; cursor: pointer; text-decoration: none; }
 .btn:hover { filter: brightness(1.1); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn { white-space: nowrap; }
 .btn.ghost { background: transparent; color: var(--title); border-color: var(--line); }
 .btn.ghost:hover { border-color: var(--title); filter: none; }
 .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
@@ -219,6 +221,40 @@ td.pending { color: var(--ink-soft); font-style: italic; }
 :root[data-theme="dark"] .toast { background: var(--hcl-cyan); color: #00293b; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .toast { background: var(--hcl-cyan); color: #00293b; } }
 
+#printDoc { display: none; }
+@page { size: A4 portrait; margin: 12mm 12mm 14mm; }
+@media print {
+  body, body.mode-mobile { background: #fff !important; }
+  body::before, .app, #modalRoot, .toast { display: none !important; }
+  #printDoc { display: block; color: #1d2b33; font-family: var(--font); font-size: 9.5pt; line-height: 1.3;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+#printDoc .p-band { display: flex; align-items: center; gap: 4mm; padding: 3mm 0 3mm; border-bottom: 0.6mm solid #00b5ef; position: relative; overflow: hidden; }
+#printDoc .p-band img { width: 15mm; height: 15mm; }
+#printDoc .p-band .t { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #004562; font-size: 15pt; line-height: 1.05; }
+#printDoc .p-band .st { color: #4a5f69; font-size: 9.5pt; }
+#printDoc .p-motif { position: absolute; right: 0; top: 0; width: 30mm; height: 100%; }
+#printDoc .p-motif i { position: absolute; width: 7mm; height: 7mm; }
+#printDoc .p-ident { display: flex; justify-content: space-between; align-items: flex-end; gap: 6mm; margin: 5mm 0 4mm; }
+#printDoc .p-ident h1 { font-size: 17pt; color: #004562; text-transform: uppercase; margin: 0; }
+#printDoc .p-ident .ty { font-size: 11pt; font-weight: 700; color: #004562; }
+#printDoc .p-ident .meta { text-align: right; color: #4a5f69; font-size: 9pt; }
+#printDoc h2 { font-size: 11pt; color: #004562; text-transform: uppercase; letter-spacing: 0.03em; margin: 5mm 0 2mm; padding-bottom: 1mm; border-bottom: 0.4mm solid #00b5ef; break-after: avoid; }
+#printDoc .p-comp { margin-bottom: 3.5mm; break-inside: avoid; }
+#printDoc .p-comp-head { display: flex; justify-content: space-between; gap: 4mm; background: #eef6fa; padding: 1.4mm 2mm; font-weight: 700; color: #004562; }
+#printDoc .p-comp-head .ok { color: #2f6b22; }
+#printDoc table { width: 100%; border-collapse: collapse; font-size: 8.8pt; table-layout: fixed; }
+#printDoc th:first-child { width: 36%; }
+#printDoc th, #printDoc td { border-bottom: 0.2mm solid #d4e3ea; padding: 1.2mm 2mm; vertical-align: top; text-align: left; }
+#printDoc th { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #4a5f69; font-weight: 700; }
+#printDoc td.n, #printDoc th:nth-child(2) { white-space: nowrap; font-variant-numeric: tabular-nums; width: 13mm; }
+#printDoc td.v, #printDoc th:nth-child(4) { white-space: nowrap; width: 22mm; }
+#printDoc td.v.ok { color: #2f6b22; font-weight: 700; }
+#printDoc .dates span { white-space: nowrap; }
+#printDoc .dim { color: #8a979e; }
+#printDoc .p-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-top: 8mm; break-inside: avoid; }
+#printDoc .p-sign div { border-top: 0.2mm solid #4a5f69; padding-top: 1.5mm; color: #4a5f69; height: 20mm; }
+
 @media (prefers-reduced-motion: no-preference) {
   .modal { animation: pop 0.14s ease-out; }
   @keyframes pop { from { transform: translateY(6px); opacity: 0.6; } to { transform: none; opacity: 1; } }
@@ -241,6 +277,7 @@ td.pending { color: var(--ink-soft); font-style: italic; }
   <main id="view"></main>
 </div>
 <div id="modalRoot"></div>
+<div id="printDoc" aria-hidden="true"></div>
 
 <script type="module">
 // SDK Firebase chargé dynamiquement : si le réseau le bloque, la page s'affiche quand même avec un message.
@@ -739,9 +776,11 @@ const firebaseConfig = {
       const p = Object.assign({ id: snap.id }, snap.data());
       const pr = profileProgress(p);
       wrap.append(
-        h("div", { style: "display:grid;gap:6px" },
-          h("div", { class: "eyebrow" }, "Suivi des acquisitions · " + ((typeById[p.type] || {}).label || p.type)),
-          h("h1", null, p.nom)),
+        h("div", { class: "row spread", style: "align-items:flex-end" },
+          h("div", { style: "display:grid;gap:6px;min-width:0" },
+            h("div", { class: "eyebrow" }, "Suivi des acquisitions · " + ((typeById[p.type] || {}).label || p.type)),
+            h("h1", null, p.nom)),
+          h("button", { class: "btn", type: "button", onclick: () => printProfile(p) }, svg("doc"), "Imprimer / PDF (A4)")),
         statsRow(pr));
       for (const s of CURRICULA[p.type] || []) {
         wrap.append(h("div", { class: "section-head" }, h("h2", null, s.title)));
@@ -750,6 +789,63 @@ const firebaseConfig = {
         wrap.append(recap);
       }
     }));
+  }
+
+  // Document A4 du suivi : bandeau du site, identité de l'interne, puis dates des tâches et des validations.
+  function printProfile(p) {
+    const $doc = document.getElementById("printDoc");
+    const tp = typeById[p.type] || { label: p.type };
+    const pr = profileProgress(p);
+    const taches = p.taches || {};
+    const logo = document.querySelector(".top img").getAttribute("src");
+    const motif = [["#fdd575", "14mm", "0"], ["repeating-linear-gradient(45deg,#86d7f4 0 0.5mm,transparent 0.5mm 1.5mm)", "7mm", "0"], ["#f7bfd8", "0", "7mm"]];
+    $doc.innerHTML = "";
+    $doc.append(
+      h("div", { class: "p-band" },
+        h("div", { class: "p-motif" }, motif.map(([bg, right, top]) => h("i", { style: "background:" + bg + ";right:" + right + ";top:" + top }))),
+        h("img", { src: logo, alt: "" }),
+        h("div", null, h("div", { class: "t" }, "Service de Radiothérapie"), h("div", { class: "st" }, "Suivi des acquisitions du semestre"))),
+      h("div", { class: "p-ident" },
+        h("div", null, h("h1", null, p.nom), h("div", { class: "ty" }, tp.label)),
+        h("div", { class: "meta" },
+          "Édité le " + frDate(todayISO()), h("br"),
+          pr.done + " / " + pr.total + " itérations réalisées", h("br"),
+          pr.valid + " / " + pr.comps + " compétences validées")));
+    for (const s of CURRICULA[p.type] || []) {
+      $doc.append(h("h2", null, s.title));
+      for (const c of s.comps) {
+        const cv = (p.competences || {})[c.id];
+        const prog = compProgress(c, p);
+        $doc.append(h("div", { class: "p-comp" },
+          h("div", { class: "p-comp-head" }, h("span", null, c.title),
+            cv ? h("span", { class: "ok" }, "Compétence validée le " + frDate(cv.valideLe))
+               : h("span", { class: "dim" }, "Non validée · " + prog.done + " / " + prog.total)),
+          h("table", null,
+            h("thead", null, h("tr", null, h("th", null, "Tâche"), h("th", null, "Fait"), h("th", null, "Dates de réalisation (sénior)"), h("th", null, "Validation"))),
+            h("tbody", null, c.tasks.map(tk => {
+              const tpg = taskProgress(tk, p), tv = taskValidation(tk, p);
+              const dates = [];
+              for (let i = 1; i <= tk.n; i++) {
+                const e = taches[iterKey(tk, i)];
+                if (e) dates.push(h("span", null, frDate(e.date) + (e.senior ? " (" + e.senior + ")" : "")));
+              }
+              return h("tr", null,
+                h("td", null, tk.label),
+                h("td", { class: "n" }, tpg.done + " / " + tpg.total),
+                h("td", { class: "dates" }, dates.length ? dates.flatMap((d, k) => k ? [" · ", d] : [d]) : h("span", { class: "dim" }, "—")),
+                h("td", { class: "v" + (tv ? " ok" : "") }, tv ? frDate(tv.valideLe) : h("span", { class: "dim" }, "—")));
+            })))));
+      }
+    }
+    $doc.append(h("div", { class: "p-sign" }, h("div", null, "Signature de l’interne"), h("div", null, "Signature du responsable de formation")));
+    // Le titre de la page sert de nom de fichier proposé lors de l'enregistrement en PDF.
+    const title = document.title;
+    document.title = "Suivi des acquisitions - " + p.nom;
+    const restore = () => { document.title = title; window.removeEventListener("afterprint", restore); };
+    window.addEventListener("afterprint", restore);
+    const img = $doc.querySelector("img");
+    const go = () => window.print();
+    if (img.complete) go(); else { img.onload = go; img.onerror = go; }
   }
 
   function statsRow(pr) {
