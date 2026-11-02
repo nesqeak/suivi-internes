@@ -301,16 +301,18 @@ const firebaseConfig = {
 
   // Compte administrateur Firebase (le mot de passe est vérifié par Firebase, pas par la page).
   const ADMIN_EMAIL = "ariane.lapierre@chu-lyon.fr";
-  const FICHE_URL = "260923%20Fiche%20de%20poste%20internes.pdf";
+  // Document de référence affiché en haut de la page de l'interne, selon son profil.
+  const FICHE_INTERNES = { url: "260923%20Fiche%20de%20poste%20internes.pdf", label: "Fiche de poste des internes (PDF)" };
+  const GRILLE_IRM = { url: "IRM-Linac_20230403.pdf", label: "Grille de compétences IRM-Linac (PDF)" };
 
   const PROFILE_TYPES = [
-    { id: "socle", label: "Phase socle", fiche: true },
-    { id: "fst-gastro", label: "FST gastro-entérologie", fiche: true },
-    { id: "fst-pneumo", label: "FST pneumologie", fiche: true },
-    { id: "fst-uro", label: "FST urologie", fiche: true },
-    { id: "dj", label: "Docteur Junior", fiche: false },
-    { id: "cca", label: "Assistant ou CCA", fiche: false },
-    { id: "irm", label: "Formation IRM", fiche: false }
+    { id: "socle", label: "Phase socle", fiche: FICHE_INTERNES },
+    { id: "fst-gastro", label: "FST gastro-entérologie", fiche: FICHE_INTERNES },
+    { id: "fst-pneumo", label: "FST pneumologie", fiche: FICHE_INTERNES },
+    { id: "fst-uro", label: "FST urologie", fiche: FICHE_INTERNES },
+    { id: "dj", label: "Docteur Junior", fiche: null },
+    { id: "cca", label: "Assistant ou CCA", fiche: null },
+    { id: "irm", label: "Formation IRM", fiche: GRILLE_IRM }
   ];
   const typeById = Object.fromEntries(PROFILE_TYPES.map(t => [t.id, t]));
 
@@ -455,7 +457,7 @@ const firebaseConfig = {
       ] },
       { title: "Compagnonnage", comps: [
         { title: "Mosaiq", tasks: [
-          t("Prendre connaissance du TUTO", 3),
+          t("Prendre connaissance du TUTO", 1),
           t("Accéder à la fiche du patient", 3),
           t("Prescription", 3),
           t("Questionnaire IRM", 3),
@@ -958,7 +960,7 @@ const firebaseConfig = {
         h("div", { style: "display:grid;gap:6px;min-width:0" },
           h("div", { class: "eyebrow" }, tp.label),
           h("h1", null, profile.nom),
-          tp.fiche ? h("a", { class: "fiche", href: FICHE_URL, target: "_blank", rel: "noopener" }, svg("doc"), "Fiche de poste des internes (PDF)") : null),
+          tp.fiche ? h("a", { class: "fiche", href: tp.fiche.url, target: "_blank", rel: "noopener" }, svg("doc"), tp.fiche.label) : null),
         statsRow(pr));
       wrap.append(head,
         h("div", { class: "legend" },
