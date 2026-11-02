@@ -309,7 +309,8 @@ const firebaseConfig = {
     { id: "fst-pneumo", label: "FST pneumologie", fiche: true },
     { id: "fst-uro", label: "FST urologie", fiche: true },
     { id: "dj", label: "Docteur Junior", fiche: false },
-    { id: "cca", label: "Assistant ou CCA", fiche: false }
+    { id: "cca", label: "Assistant ou CCA", fiche: false },
+    { id: "irm", label: "Formation IRM", fiche: false }
   ];
   const typeById = Object.fromEntries(PROFILE_TYPES.map(t => [t.id, t]));
 
@@ -446,6 +447,32 @@ const firebaseConfig = {
           t("Gestion d’un nouveau patient IRM (cf. document spécifique)", 3)] }
       ] },
       { title: "Pathologies", comps: pathoComps(PATHO_CCA, 3) }
+    ],
+    // Grille de compétences « Formation des médecins par compagnonnage à l’IRM-Linac » (partie 3).
+    "irm": [
+      { title: "Formation initiale", comps: [
+        { title: "IRM Linac", tasks: [t("Risques de l’IRM", 1), t("Bases de l’IRM", 1)] }
+      ] },
+      { title: "Compagnonnage", comps: [
+        { title: "Mosaiq", tasks: [
+          t("Prendre connaissance du TUTO", 3),
+          t("Accéder à la fiche du patient", 3),
+          t("Prescription", 3),
+          t("Questionnaire IRM", 3),
+          t("Plan of care", 3)] },
+        { title: "Monaco (TPS)", tasks: [
+          t("Fusion d’images", 3),
+          t("Utilisation 4D", 3),
+          t("Outils de contourage, création des marges, du MM", 3),
+          t("Paramétrage des critères dosimétriques", 3),
+          t("Paramétrage du « adapt setup » pour les patients en ATS", 3),
+          t("Validation de la dosimétrie", 3)] },
+        { title: "Monaco (au poste)", tasks: [
+          t("Adapt to position : recalage", 3),
+          t("Adapt to shape : recontours et recalage", 3),
+          t("Différences de recalcul entre ATP et ATS", 3),
+          t("Validation de la dosimétrie adaptée (critères dosimétriques, comparaison de plans)", 3)] }
+      ] }
     ]
   };
 
